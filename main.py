@@ -2,20 +2,30 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Read the CSV file from the project root directory
-df = pd.read_csv("life-expectancy_Ireland.csv")
+# Load the life expectancy data
+life_df = pd.read_csv("life-expectancy_Ireland.csv")
 
-# Inspect the data
-print(df.head())
-print(df.info())
+# Load the GDP per capita data
+gdp_df = pd.read_csv("gdp-per-capita_Ireland.csv")
 
-# Create a scatter plot
-plt.scatter(df["Year"], df["Life expectancy"])
+# Plot 1: Life expectancy over time
+plt.figure(figsize=(10, 5))
+plt.scatter(life_df["Year"], life_df["Life expectancy"])
 
-# Add labels and title
 plt.xlabel("Year")
 plt.ylabel("Life expectancy (years)")
 plt.title("Life Expectancy in Ireland Over Time")
+plt.grid(True, alpha=0.3)
 
-# Display the plot
+plt.show()
+
+# Plot 2: GDP per capita over time
+plt.figure(figsize=(10, 5))
+plt.scatter(gdp_df["Year"], gdp_df["GDP per capita"])
+
+plt.xlabel("Year")
+plt.ylabel("GDP per capita")
+plt.title("GDP per Capita in Ireland Over Time")
+plt.grid(True, alpha=0.3)
+
 plt.show()
