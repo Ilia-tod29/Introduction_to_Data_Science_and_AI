@@ -108,6 +108,28 @@ is_aggregate = (
 )
 df = df[~is_aggregate].copy()
 
+# Exclude territories that are not independent countries. They have
+# their own ISO codes, so the filter above keeps them, but they are
+# part of another country (e.g. Greenland belongs to Denmark and
+# Macao to China). Small, rich territories such as Bermuda and the
+# Cayman Islands would otherwise fill the top of the GDP per capita
+# ranking. Kosovo and Palestine are kept as partially recognised states.
+territory_codes = [
+    "ABW",  # Aruba (Netherlands)
+    "BMU",  # Bermuda (United Kingdom)
+    "CUW",  # Curacao (Netherlands)
+    "CYM",  # Cayman Islands (United Kingdom)
+    "FRO",  # Faroe Islands (Denmark)
+    "GRL",  # Greenland (Denmark)
+    "HKG",  # Hong Kong (China)
+    "MAC",  # Macao (China)
+    "PRI",  # Puerto Rico (United States)
+    "SXM",  # Sint Maarten (Netherlands)
+    "TCA",  # Turks and Caicos Islands (United Kingdom)
+    "VIR",  # United States Virgin Islands (United States)
+]
+df = df[~df["Code"].isin(territory_codes)].copy()
+
 # Keep one country name column after merging.
 if "Country_life" in df.columns:
     df["Country"] = df["Country_life"]
@@ -265,66 +287,98 @@ plt.show()
 
 
 # ============================================================
-# 5. GRAPH 4 — QUESTION D: TOTAL GDP VS LIFE EXPECTANCY IN 2023
-#    Total GDP measures the size of an economy, so the largest
-#    economies are treated as the "strong" ones. They are
-#    highlighted and labelled so we can see whether all of them
-#    are above the "high life expectancy" line.
+# 5. GRAPHS 4 AND 5 — QUESTIONS D AND E: STRONG ECONOMIES VS
+#    LIFE EXPECTANCY IN 2023
+#    The same plot is drawn twice: once with total GDP (question d)
+#    and once with GDP per capita (question e) as the indicator of
+#    a strong economy. The top countries by that indicator are
+#    highlighted so we can see whether all of them are above the
+#    "high life expectancy" line.
 #
 #    We consider "High" life expectancy to be the upper quartile: life
-#    expectancy at least as high as 75% of countries in 2023.
+#    expectancy at least as high as 75% of countries in 2023. The same
+#    threshold is used in both plots so the results can be compared.
 # ============================================================
 
 top_n = 15
 
-gdp_year_df = year_df.dropna(subset=["GDP"]).copy()
+high_life_threshold = year_df["Life expectancy"].quantile(0.75)
 
-high_life_threshold = gdp_year_df["Life expectancy"].quantile(0.75)
 
-top_economies = gdp_year_df.nlargest(top_n, "GDP")
+def plot_strong_economies(column, title_name, xlabel, ticks, tick_labels):
+    """Plot an economic indicator against life expectancy for one year.
 
-plt.figure(figsize=(10, 6))
+    column      -- the indicator column, e.g. "GDP" or "GDP per capita"
+    title_name  -- how the indicator is named in the title and legend
+    xlabel      -- x-axis label, including the unit
+    ticks       -- positions of the x-axis ticks
+    tick_labels -- text shown at each x-axis tick
+    """
+    indicator_df = year_df.dropna(subset=[column]).copy()
 
-# Show all countries in grey for context.
-plt.scatter(
-    gdp_year_df["GDP"],
-    gdp_year_df["Life expectancy"],
-    color="grey",
-    alpha=0.4,
-    label="Other countries"
+    top_df = indicator_df.nlargest(top_n, column)
+
+    plt.figure(figsize=(10, 6))
+
+    # Show all countries in grey for context.
+    plt.scatter(
+        indicator_df[column],
+        indicator_df["Life expectancy"],
+        color="grey",
+        alpha=0.4,
+        label="Other countries"
+    )
+
+    # Highlight the top countries by the chosen indicator.
+    plt.scatter(
+        top_df[column],
+        top_df["Life expectancy"],
+        color="tab:blue",
+        label=f"Top {top_n} countries by {title_name}"
+    )
+
+    # Mark the threshold for "high" life expectancy.
+    plt.axhline(
+        high_life_threshold,
+        color="red",
+        linestyle="--",
+        label=f"High life expectancy (upper quartile, {high_life_threshold:.1f} years)"
+    )
+
+    # Capitalise only the first letter so "GDP" stays in capitals.
+    plt.title(
+        f"{title_name[0].upper()}{title_name[1:]} vs Life Expectancy — "
+        f"{selected_year}"
+    )
+    plt.xlabel(xlabel)
+    plt.xscale("log")
+    plt.xticks(ticks, tick_labels)
+    plt.minorticks_off()
+    plt.ylabel("Life expectancy (years)")
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    print(f"Top {top_n} countries by {title_name} in {selected_year}:")
+    print(top_df[["Country", column, "Life expectancy"]].to_string(index=False))
+    print()
+
+
+# Question d: total GDP, with the log axis in billions and trillions.
+plot_strong_economies(
+    column="GDP",
+    title_name="total GDP",
+    xlabel="GDP (international-$ at 2021 prices, PPP, log scale)",
+    ticks=[1e8, 1e9, 1e10, 1e11, 1e12, 1e13],
+    tick_labels=["$100M", "$1B", "$10B", "$100B", "$1T", "$10T"]
 )
 
-# Highlight the largest economies.
-plt.scatter(
-    top_economies["GDP"],
-    top_economies["Life expectancy"],
-    color="tab:blue",
-    label=f"Top {top_n} economies by total GDP"
+# Question e: GDP per capita, with the same ticks as graph 2.
+plot_strong_economies(
+    column="GDP per capita",
+    title_name="GDP per capita",
+    xlabel="GDP per capita (international-$ at 2021 prices, PPP, log scale)",
+    ticks=gdp_ticks,
+    tick_labels=[f"${tick:,}" for tick in gdp_ticks]
 )
-
-# Mark the threshold for "high" life expectancy.
-plt.axhline(
-    high_life_threshold,
-    color="red",
-    linestyle="--",
-    label=f"High life expectancy (upper quartile, {high_life_threshold:.1f} years)"
-)
-
-plt.title(f"Total GDP vs Life Expectancy — {selected_year}")
-plt.xlabel("GDP (international-$ at 2021 prices, PPP, log scale)")
-plt.xscale("log")
-
-# Label the log axis in billions and trillions of dollars.
-gdp_total_ticks = [1e8, 1e9, 1e10, 1e11, 1e12, 1e13]
-gdp_total_labels = ["$100M", "$1B", "$10B", "$100B", "$1T", "$10T"]
-plt.xticks(gdp_total_ticks, gdp_total_labels)
-plt.minorticks_off()
-plt.ylabel("Life expectancy (years)")
-plt.grid(True, alpha=0.3)
-plt.legend()
-plt.tight_layout()
-plt.show()
-
-print(f"Top {top_n} economies by total GDP in {selected_year}:")
-print(top_economies[["Country", "GDP", "Life expectancy"]].to_string(index=False))
-print()
