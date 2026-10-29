@@ -1,4 +1,5 @@
 
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -69,6 +70,15 @@ df = df[
     df["Code"].notna()
 ].copy()
 
+# Exclude aggregates that Our World in Data gives an "OWID_" code,
+# such as World and the income groups. Kosovo also uses an "OWID_"
+# code because it has no ISO code, but it is a country, so keep it.
+is_aggregate = (
+    df["Code"].str.startswith("OWID_") &
+    (df["Code"] != "OWID_KOS")
+)
+df = df[~is_aggregate].copy()
+
 # Keep one country name column after merging.
 if "Country_life" in df.columns:
     df["Country"] = df["Country_life"]
@@ -89,7 +99,13 @@ plt.scatter(
 )
 
 plt.title("GDP per Capita vs Life Expectancy — All Years")
-plt.xlabel("GDP per capita (international dollars)")
+plt.xlabel("GDP per capita (international-$ at 2021 prices, PPP, log scale)")
+plt.xscale("log")
+
+# Label the log axis in plain dollars instead of powers of 10.
+gdp_ticks = [500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000]
+plt.xticks(gdp_ticks, [f"${tick:,}" for tick in gdp_ticks])
+plt.minorticks_off()
 plt.ylabel("Life expectancy (years)")
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
@@ -122,9 +138,10 @@ plt.scatter(
     label="Countries"
 )
 
-# Divide GDP per capita into 20 equal-width intervals.
+# Divide GDP per capita into 20 intervals of equal width on the
+# log scale, so each interval covers the same width on the x-axis.
 year_df["GDP group"] = pd.cut(
-    year_df["GDP per capita"],
+    np.log10(year_df["GDP per capita"]),
     bins=20
 )
 
@@ -157,7 +174,13 @@ plt.plot(
 )
 
 plt.title(f"GDP per Capita vs Life Expectancy — {selected_year}")
-plt.xlabel("GDP per capita (international dollars)")
+plt.xlabel("GDP per capita (international-$ at 2021 prices, PPP, log scale)")
+plt.xscale("log")
+
+# Label the log axis in plain dollars instead of powers of 10.
+gdp_ticks = [1000, 2000, 5000, 10000, 20000, 50000, 100000]
+plt.xticks(gdp_ticks, [f"${tick:,}" for tick in gdp_ticks])
+plt.minorticks_off()
 plt.ylabel("Life expectancy (years)")
 plt.grid(True, alpha=0.3)
 plt.legend()
@@ -204,7 +227,7 @@ plt.plot(
 plt.title(
     f"GDP per Capita vs Life Expectancy — {selected_country}, All Years"
 )
-plt.xlabel("GDP per capita (international dollars)")
+plt.xlabel("GDP per capita (international-$ at 2021 prices, PPP)")
 plt.ylabel("Life expectancy (years)")
 plt.grid(True, alpha=0.3)
 plt.legend()
