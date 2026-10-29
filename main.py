@@ -1,3 +1,4 @@
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -5,13 +6,15 @@ import matplotlib.pyplot as plt
 # 1. DOWNLOAD AND PREPARE THE DATA
 # ============================================================
 
-# Dataset URLs
-#https://ourworldindata.org/grapher/life-expectancy
+# Dataset URLs:
+# https://ourworldindata.org/grapher/life-expectancy
+# https://ourworldindata.org/grapher/gdp-per-capita-worldbank
+
 life_url = (
     "https://ourworldindata.org/grapher/life-expectancy.csv"
     "?v=1&csvType=full&useColumnShortNames=true"
 )
-# https://ourworldindata.org/grapher/gdp-per-capita-worldbank
+
 gdp_url = (
     "https://ourworldindata.org/grapher/gdp-per-capita-worldbank.csv"
     "?v=1&csvType=full&useColumnShortNames=true"
@@ -47,6 +50,7 @@ gdp_df = gdp_df[
 ]
 
 # Combine GDP and life expectancy using country code and year.
+# An inner join keeps only observations present in both datasets.
 df = pd.merge(
     life_df,
     gdp_df,
@@ -69,8 +73,11 @@ df = df[
 if "Country_life" in df.columns:
     df["Country"] = df["Country_life"]
 
+
 # ============================================================
 # 2. GRAPH 1 — ALL COUNTRIES, ALL AVAILABLE YEARS
+#    Each point represents a country in a particular year.
+#    Historical and modern observations are included together.
 # ============================================================
 
 plt.figure(figsize=(10, 6))
@@ -91,7 +98,14 @@ plt.show()
 
 # ============================================================
 # 3. GRAPH 2 — ALL COUNTRIES IN 2023
-#    Show individual countries and a smoothed average trend.
+#    Each point represents one country in 2023.
+#    This is a defensible choice because it compares countries
+#    at the same point in time, rather than mixing historical
+#    and modern life expectancy values.
+#
+#    The red curve shows a smoothed average trend across
+#    GDP-per-capita intervals. It helps reveal the general
+#    relationship without displaying every average as a dot.
 # ============================================================
 
 selected_year = 2023
@@ -100,7 +114,7 @@ year_df = df[df["Year"] == selected_year].copy()
 
 plt.figure(figsize=(10, 6))
 
-# Each point represents one country in the selected year.
+# Show the individual countries.
 plt.scatter(
     year_df["GDP per capita"],
     year_df["Life expectancy"],
@@ -133,7 +147,7 @@ average_df["Smoothed life expectancy"] = (
     .mean()
 )
 
-# Draw the smooth trend without individual markers.
+# Draw the smoothed trend without individual markers.
 plt.plot(
     average_df["GDP per capita"],
     average_df["Smoothed life expectancy"],
@@ -152,22 +166,34 @@ plt.show()
 
 
 # ============================================================
-# 4. GRAPH 3 — BULGARIA ACROSS ALL AVAILABLE YEARS
-#    Show how GDP per capita and life expectancy change together.
+# 4. GRAPH 3 — JAPAN ACROSS ALL AVAILABLE YEARS
+#    Each point represents Japan in a particular year.
+#
+#    Connecting the points chronologically shows how Japan's
+#    GDP per capita and life expectancy changed together over
+#    time. This can reveal long-term development and unusual
+#    periods in the country's economic and health history.
+#
+#    Japan is an alternative example for examining long-term
+#    changes. However, historical changes and unusual periods
+#    can still produce jumps in the graph.
+#
+#    The graph shows an association, not proof that GDP growth
+#    causes longer life expectancy.
 # ============================================================
 
-selected_country = "Bulgaria"
+selected_country = "Japan"
 
 country_df = df[
     df["Country"] == selected_country
 ].copy()
 
-# Sort chronologically so the line follows the country's history.
+# Sort chronologically so the line follows Japan's history.
 country_df = country_df.sort_values("Year")
 
 plt.figure(figsize=(10, 6))
 
-# Each point represents Bulgaria in one year.
+# Each point represents Japan in one year.
 plt.scatter(
     country_df["GDP per capita"],
     country_df["Life expectancy"],
