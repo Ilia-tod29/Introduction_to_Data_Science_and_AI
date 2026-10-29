@@ -1,9 +1,11 @@
-
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# ============================================================
+# 1. DOWNLOAD AND PREPARE THE DATA
+# ============================================================
 
-# 1. Dataset URLs
+# Dataset URLs
 #https://ourworldindata.org/grapher/life-expectancy
 life_url = (
     "https://ourworldindata.org/grapher/life-expectancy.csv"
@@ -15,24 +17,12 @@ gdp_url = (
     "?v=1&csvType=full&useColumnShortNames=true"
 )
 
+user_agent = {"User-Agent": "Our World In Data data fetch/1.0"}
 
-# 2. Download the full datasets
-user_agent = {
-    "User-Agent": "Our World In Data data fetch/1.0"
-}
+life_df = pd.read_csv(life_url, storage_options=user_agent)
+gdp_df = pd.read_csv(gdp_url, storage_options=user_agent)
 
-life_df = pd.read_csv(
-    life_url,
-    storage_options=user_agent
-)
-
-gdp_df = pd.read_csv(
-    gdp_url,
-    storage_options=user_agent
-)
-
-
-# 3. Rename the columns
+# Rename columns to make them easier to understand.
 life_df = life_df.rename(columns={
     "entity": "Country",
     "code": "Code",
@@ -47,8 +37,7 @@ gdp_df = gdp_df.rename(columns={
     "ny_gdp_pcap_pp_kd": "GDP per capita"
 })
 
-
-# 4. Keep the columns needed for the plot
+# Keep only the columns needed for the analysis.
 life_df = life_df[
     ["Country", "Code", "Year", "Life expectancy"]
 ]
@@ -57,8 +46,7 @@ gdp_df = gdp_df[
     ["Country", "Code", "Year", "GDP per capita"]
 ]
 
-
-# 5. Combine the datasets by country code and year
+# Combine GDP and life expectancy using country code and year.
 df = pd.merge(
     life_df,
     gdp_df,
@@ -67,20 +55,141 @@ df = pd.merge(
     suffixes=("_life", "_gdp")
 )
 
+# Remove observations without valid GDP or life expectancy.
+df = df.dropna(subset=["GDP per capita", "Life expectancy"])
 
-# 6. Plot all matching observations
+# Keep positive values and exclude aggregate entities without country codes.
+df = df[
+    (df["GDP per capita"] > 0) &
+    (df["Life expectancy"] > 0) &
+    df["Code"].notna()
+].copy()
+
+# Keep one country name column after merging.
+if "Country_life" in df.columns:
+    df["Country"] = df["Country_life"]
+
+# ============================================================
+# 2. GRAPH 1 — ALL COUNTRIES, ALL AVAILABLE YEARS
+# ============================================================
+
 plt.figure(figsize=(10, 6))
 
 plt.scatter(
     df["GDP per capita"],
     df["Life expectancy"],
-    alpha=0.4
+    alpha=0.3
 )
 
-plt.title("GDP per Capita vs Life Expectancy")
-plt.xlabel("GDP per capita (international-$, 2021 prices)")
+plt.title("GDP per Capita vs Life Expectancy — All Years")
+plt.xlabel("GDP per capita (international dollars)")
 plt.ylabel("Life expectancy (years)")
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
+plt.show()
 
+
+# ============================================================
+# 3. GRAPH 2 — ALL COUNTRIES IN 2023
+#    Show individual countries and a smoothed average trend.
+# ============================================================
+
+selected_year = 2023
+
+year_df = df[df["Year"] == selected_year].copy()
+
+plt.figure(figsize=(10, 6))
+
+# Each point represents one country in the selected year.
+plt.scatter(
+    year_df["GDP per capita"],
+    year_df["Life expectancy"],
+    alpha=0.5,
+    label="Countries"
+)
+
+# Divide GDP per capita into 20 equal-width intervals.
+year_df["GDP group"] = pd.cut(
+    year_df["GDP per capita"],
+    bins=20
+)
+
+# Calculate average GDP and life expectancy in each interval.
+average_df = year_df.groupby(
+    "GDP group",
+    observed=True
+).agg({
+    "GDP per capita": "mean",
+    "Life expectancy": "mean"
+}).dropna()
+
+# Sort the averages by GDP before smoothing.
+average_df = average_df.sort_values("GDP per capita")
+
+# Smooth the trend using a centered rolling average.
+average_df["Smoothed life expectancy"] = (
+    average_df["Life expectancy"]
+    .rolling(window=5, center=True, min_periods=1)
+    .mean()
+)
+
+# Draw the smooth trend without individual markers.
+plt.plot(
+    average_df["GDP per capita"],
+    average_df["Smoothed life expectancy"],
+    color="red",
+    linewidth=2.5,
+    label="Smoothed average trend"
+)
+
+plt.title(f"GDP per Capita vs Life Expectancy — {selected_year}")
+plt.xlabel("GDP per capita (international dollars)")
+plt.ylabel("Life expectancy (years)")
+plt.grid(True, alpha=0.3)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+
+# ============================================================
+# 4. GRAPH 3 — BULGARIA ACROSS ALL AVAILABLE YEARS
+#    Show how GDP per capita and life expectancy change together.
+# ============================================================
+
+selected_country = "Bulgaria"
+
+country_df = df[
+    df["Country"] == selected_country
+].copy()
+
+# Sort chronologically so the line follows the country's history.
+country_df = country_df.sort_values("Year")
+
+plt.figure(figsize=(10, 6))
+
+# Each point represents Bulgaria in one year.
+plt.scatter(
+    country_df["GDP per capita"],
+    country_df["Life expectancy"],
+    alpha=0.6,
+    label="Annual observations"
+)
+
+# Connect observations chronologically to show historical development.
+plt.plot(
+    country_df["GDP per capita"],
+    country_df["Life expectancy"],
+    linewidth=1.5,
+    alpha=0.7,
+    label="Historical path"
+)
+
+plt.title(
+    f"GDP per Capita vs Life Expectancy — {selected_country}, All Years"
+)
+plt.xlabel("GDP per capita (international dollars)")
+plt.ylabel("Life expectancy (years)")
+plt.grid(True, alpha=0.3)
+plt.legend()
+plt.tight_layout()
 plt.show()
