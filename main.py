@@ -166,20 +166,11 @@ plt.show()
 
 
 # ============================================================
-# 4. GRAPH 3 — JAPAN ACROSS ALL AVAILABLE YEARS
-#    Each point represents Japan in a particular year.
-#
-#    Connecting the points chronologically shows how Japan's
-#    GDP per capita and life expectancy changed together over
-#    time. This can reveal long-term development and unusual
-#    periods in the country's economic and health history.
-#
-#    Japan is an alternative example for examining long-term
-#    changes. However, historical changes and unusual periods
-#    can still produce jumps in the graph.
-#
-#    The graph shows an association, not proof that GDP growth
-#    causes longer life expectancy.
+# 4. GRAPH 3 — JAPAN OVER TIME
+#    Using one country reduces geographical differences,
+#    such as climate and location, allowing us to examine
+#    how GDP per capita and life expectancy change together
+#    within the same country over time.
 # ============================================================
 
 selected_country = "Japan"
