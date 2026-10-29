@@ -262,3 +262,69 @@ plt.grid(True, alpha=0.3)
 plt.legend()
 plt.tight_layout()
 plt.show()
+
+
+# ============================================================
+# 5. GRAPH 4 — QUESTION D: TOTAL GDP VS LIFE EXPECTANCY IN 2023
+#    Total GDP measures the size of an economy, so the largest
+#    economies are treated as the "strong" ones. They are
+#    highlighted and labelled so we can see whether all of them
+#    are above the "high life expectancy" line.
+#
+#    We consider "High" life expectancy to be the upper quartile: life
+#    expectancy at least as high as 75% of countries in 2023.
+# ============================================================
+
+top_n = 15
+
+gdp_year_df = year_df.dropna(subset=["GDP"]).copy()
+
+high_life_threshold = gdp_year_df["Life expectancy"].quantile(0.75)
+
+top_economies = gdp_year_df.nlargest(top_n, "GDP")
+
+plt.figure(figsize=(10, 6))
+
+# Show all countries in grey for context.
+plt.scatter(
+    gdp_year_df["GDP"],
+    gdp_year_df["Life expectancy"],
+    color="grey",
+    alpha=0.4,
+    label="Other countries"
+)
+
+# Highlight the largest economies.
+plt.scatter(
+    top_economies["GDP"],
+    top_economies["Life expectancy"],
+    color="tab:blue",
+    label=f"Top {top_n} economies by total GDP"
+)
+
+# Mark the threshold for "high" life expectancy.
+plt.axhline(
+    high_life_threshold,
+    color="red",
+    linestyle="--",
+    label=f"High life expectancy (upper quartile, {high_life_threshold:.1f} years)"
+)
+
+plt.title(f"Total GDP vs Life Expectancy — {selected_year}")
+plt.xlabel("GDP (international-$ at 2021 prices, PPP, log scale)")
+plt.xscale("log")
+
+# Label the log axis in billions and trillions of dollars.
+gdp_total_ticks = [1e8, 1e9, 1e10, 1e11, 1e12, 1e13]
+gdp_total_labels = ["$100M", "$1B", "$10B", "$100B", "$1T", "$10T"]
+plt.xticks(gdp_total_ticks, gdp_total_labels)
+plt.minorticks_off()
+plt.ylabel("Life expectancy (years)")
+plt.grid(True, alpha=0.3)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+print(f"Top {top_n} economies by total GDP in {selected_year}:")
+print(top_economies[["Country", "GDP", "Life expectancy"]].to_string(index=False))
+print()
