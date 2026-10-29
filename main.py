@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 
 
 # 1. Dataset URLs
+#https://ourworldindata.org/grapher/life-expectancy
 life_url = (
     "https://ourworldindata.org/grapher/life-expectancy.csv"
     "?v=1&csvType=full&useColumnShortNames=true"
 )
-
+# https://ourworldindata.org/grapher/gdp-per-capita-worldbank
 gdp_url = (
     "https://ourworldindata.org/grapher/gdp-per-capita-worldbank.csv"
     "?v=1&csvType=full&useColumnShortNames=true"
