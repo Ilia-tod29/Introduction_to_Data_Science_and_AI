@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 # Dataset URLs:
 # https://ourworldindata.org/grapher/life-expectancy
 # https://ourworldindata.org/grapher/gdp-per-capita-worldbank
+# https://ourworldindata.org/grapher/gdp-worldbank
 
 life_url = (
     "https://ourworldindata.org/grapher/life-expectancy.csv"
@@ -21,10 +22,19 @@ gdp_url = (
     "?v=1&csvType=full&useColumnShortNames=true"
 )
 
+# Total GDP is needed for question d. It comes from the same World Bank
+# source and uses the same unit (international-$ at 2021 prices, PPP)
+# as GDP per capita, so the two measures can be compared directly.
+gdp_total_url = (
+    "https://ourworldindata.org/grapher/gdp-worldbank.csv"
+    "?v=1&csvType=full&useColumnShortNames=true"
+)
+
 user_agent = {"User-Agent": "Our World In Data data fetch/1.0"}
 
 life_df = pd.read_csv(life_url, storage_options=user_agent)
 gdp_df = pd.read_csv(gdp_url, storage_options=user_agent)
+gdp_total_df = pd.read_csv(gdp_total_url, storage_options=user_agent)
 
 # Rename columns to make them easier to understand.
 life_df = life_df.rename(columns={
@@ -41,6 +51,12 @@ gdp_df = gdp_df.rename(columns={
     "ny_gdp_pcap_pp_kd": "GDP per capita"
 })
 
+gdp_total_df = gdp_total_df.rename(columns={
+    "code": "Code",
+    "year": "Year",
+    "ny_gdp_mktp_pp_kd": "GDP"
+})
+
 # Keep only the columns needed for the analysis.
 life_df = life_df[
     ["Country", "Code", "Year", "Life expectancy"]
@@ -48,6 +64,10 @@ life_df = life_df[
 
 gdp_df = gdp_df[
     ["Country", "Code", "Year", "GDP per capita"]
+]
+
+gdp_total_df = gdp_total_df[
+    ["Code", "Year", "GDP"]
 ]
 
 # Combine GDP and life expectancy using country code and year.
@@ -58,6 +78,15 @@ df = pd.merge(
     on=["Code", "Year"],
     how="inner",
     suffixes=("_life", "_gdp")
+)
+
+# Add total GDP. A left join keeps every observation used in the
+# scatter plots, even where total GDP is missing.
+df = pd.merge(
+    df,
+    gdp_total_df,
+    on=["Code", "Year"],
+    how="left"
 )
 
 # Remove observations without valid GDP or life expectancy.
