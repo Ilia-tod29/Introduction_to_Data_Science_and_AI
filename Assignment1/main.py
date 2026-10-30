@@ -382,3 +382,47 @@ plot_strong_economies(
     ticks=gdp_ticks,
     tick_labels=[f"${tick:,}" for tick in gdp_ticks]
 )
+# ============================================================
+# 6. QUESTION B - LIFE EXPECTANCY MORE THAN ONE STANDARD
+#    DEVIATION ABOVE THE MEAN (2023)
+# ============================================================
+
+mean_life = year_df["Life expectancy"].mean()
+std_life = year_df["Life expectancy"].std()
+cutoff_b = mean_life + std_life
+
+above_df = year_df[year_df["Life expectancy"] > cutoff_b].sort_values(
+    "Life expectancy", ascending=False
+)
+
+print(f"Question b - {selected_year}")
+print(f"Mean: {mean_life:.1f} years, standard deviation: {std_life:.1f} years")
+print(f"Cutoff (mean + 1 SD): {cutoff_b:.1f} years")
+print(f"{len(above_df)} of {len(year_df)} countries are above the cutoff:")
+print(above_df[["Country", "Life expectancy", "GDP per capita"]].round({"Life expectancy": 1, "GDP per capita": 0}).to_string(index=False))
+print()
+
+plt.figure(figsize=(10, 6))
+plt.scatter(
+    year_df["GDP per capita"], year_df["Life expectancy"],
+    color="grey", alpha=0.4, label="Other countries"
+)
+plt.scatter(
+    above_df["GDP per capita"], above_df["Life expectancy"],
+    color="tab:green", label="Above mean + 1 SD"
+)
+plt.axhline(
+    cutoff_b, color="red", linestyle="--",
+    label=f"Mean + 1 SD ({cutoff_b:.1f} years)"
+)
+plt.title(f"Life Expectancy Above Mean + 1 Standard Deviation - {selected_year}")
+plt.xlabel("GDP per capita (international-$ at 2021 prices, PPP, log scale)")
+plt.xscale("log")
+plt.xticks(gdp_ticks, [f"${tick:,}" for tick in gdp_ticks])
+plt.minorticks_off()
+plt.ylabel("Life expectancy (years)")
+plt.grid(True, alpha=0.3)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
