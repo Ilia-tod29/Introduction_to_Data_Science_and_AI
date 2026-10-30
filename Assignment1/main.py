@@ -426,3 +426,51 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
+
+# ============================================================
+# 7. QUESTION C - HIGH LIFE EXPECTANCY BUT LOW GDP PER CAPITA (2023)
+#    High: upper quartile of life expectancy (same as d and e).
+#    Low (strict): below the median GDP per capita.
+#    Low (relaxed): below the mean GDP per capita.
+# ============================================================
+
+median_gdp = year_df["GDP per capita"].median()
+mean_gdp = year_df["GDP per capita"].mean()
+high_df = year_df[year_df["Life expectancy"] >= high_life_threshold]
+
+strict_df = high_df[high_df["GDP per capita"] < median_gdp]
+relaxed_df = high_df[high_df["GDP per capita"] < mean_gdp].sort_values(
+    "Life expectancy", ascending=False
+)
+
+print(f"Question c - {selected_year}")
+print(f"High life expectancy: at least {high_life_threshold:.1f} years")
+print(f"Strict low GDP (below median ${median_gdp:,.0f}): {len(strict_df)} countries")
+print(f"Relaxed low GDP (below mean ${mean_gdp:,.0f}): {len(relaxed_df)} countries")
+print(relaxed_df[["Country", "Life expectancy", "GDP per capita"]]
+      .round({"Life expectancy": 1, "GDP per capita": 0})
+      .to_string(index=False))
+print()
+
+plt.figure(figsize=(10, 6))
+plt.scatter(year_df["GDP per capita"], year_df["Life expectancy"],
+            color="grey", alpha=0.4, label="Other countries")
+plt.scatter(relaxed_df["GDP per capita"], relaxed_df["Life expectancy"],
+            color="tab:orange", label="High life expectancy, GDP below mean")
+plt.axhline(high_life_threshold, color="red", linestyle="--",
+            label=f"High life expectancy ({high_life_threshold:.1f} years)")
+plt.axvline(median_gdp, color="blue", linestyle="--",
+            label=f"Median GDP per capita (${median_gdp:,.0f})")
+plt.axvline(mean_gdp, color="green", linestyle="--",
+            label=f"Mean GDP per capita (${mean_gdp:,.0f})")
+plt.title(f"High Life Expectancy but Low GDP per Capita - {selected_year}")
+plt.xlabel("GDP per capita (international-$ at 2021 prices, PPP, log scale)")
+plt.xscale("log")
+plt.xticks(gdp_ticks, [f"${tick:,}" for tick in gdp_ticks])
+plt.minorticks_off()
+plt.ylabel("Life expectancy (years)")
+plt.grid(True, alpha=0.3)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
