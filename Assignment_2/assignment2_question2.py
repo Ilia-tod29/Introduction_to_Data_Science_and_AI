@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from sklearn.datasets import load_iris
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score, confusion_matrix
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 
 # ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ plt.close()
 # ----------------------------------------------------------------------------
 WEIGHTS = ["uniform", "distance"]
 K_VALUES = range(1, len(X_train) + 1)     # 1 .. 105 (all training flowers)
-SHOWN_K = [1, 5, 15, 50, 75, 105]         # values of k shown in the table
+SHOWN_K = [1, 5, 15, 50, 75, 105]         # values of k shown in the tables and in Figure 7
 
 # accuracy[weights][k - 1] = (training accuracy, test accuracy)
 accuracy = {w: [] for w in WEIGHTS}
@@ -79,3 +79,39 @@ ax.set(xlabel="Number of neighbours (k)", ylabel="Test accuracy",
        title="Figure 6: k-NN test accuracy for growing k")
 ax.grid(alpha=0.3); ax.legend()
 fig.tight_layout(); fig.savefig("figure6_knn_accuracy_vs_k.png", dpi=200); plt.close(fig)
+
+# ----------------------------------------------------------------------------
+# 2c. Compare logistic regression and k-NN: confusion matrices + accuracy
+#     The test set is small (one flower = 2.2 percentage points), so each model
+#     is also scored with 10-fold cross-validation: the data is cut into 10
+#     parts, each part is used once as the test set, and the 10 accuracies are
+#     averaged. Here the models train on 135 flowers (45 per species), not 105,
+#     so k = 105 is no longer "all training flowers" in the CV column.
+# ----------------------------------------------------------------------------
+cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+
+
+def evaluate(name, model):
+    """Print one row of the comparison table and return the test predictions."""
+    y_pred = model.fit(X_train, y_train).predict(X_test)
+    cv_acc = cross_val_score(model, iris.data, iris.target, cv=cv).mean()
+    print(f"{name:<24} {accuracy_score(y_test, y_pred):>8.3f} "
+          f"{(y_test != y_pred).sum():>8} {cv_acc:>9.3f}")
+    return y_pred
+
+
+print("\n[2c  MODEL COMPARISON]")
+print(f"{'Model':<24} {'Test acc':>8} {'Errors':>8} {'CV acc':>9}")
+evaluate("Logistic regression", LogisticRegression(max_iter=1000))
+
+# One confusion matrix per k-NN setting: rows = weights, columns = k
+fig, axes = plt.subplots(len(WEIGHTS), len(SHOWN_K), figsize=(19, 7.5))
+for row, w in zip(axes, WEIGHTS):
+    for ax, k in zip(row, SHOWN_K):
+        y_pred = evaluate(f"k-NN {w}, k={k}", KNeighborsClassifier(n_neighbors=k, weights=w))
+        ConfusionMatrixDisplay.from_predictions(
+            y_test, y_pred, display_labels=iris.target_names, cmap="Blues", colorbar=False, ax=ax)
+        ax.set_title(f"{w} weights, k = {k}")
+        ax.tick_params(axis="x", rotation=45)
+fig.suptitle("Figure 7: Confusion matrices for k-NN (test set)")
+fig.tight_layout(); fig.savefig("figure7_knn_confusion_matrices.png", dpi=200); plt.close(fig)
