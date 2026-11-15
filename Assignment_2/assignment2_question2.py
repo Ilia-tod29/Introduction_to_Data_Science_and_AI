@@ -64,11 +64,11 @@ for w in WEIGHTS:
         knn = KNeighborsClassifier(n_neighbors=k, weights=w).fit(X_train, y_train)
         accuracy[w].append((knn.score(X_train, y_train), knn.score(X_test, y_test)))
 
-print("\n[2b  K-NEAREST NEIGHBOURS]  accuracy (train / test)")
-print(f"{'k':>4}   {'uniform':^15} {'distance':^15}")
+print("\n[2b  K-NEAREST NEIGHBOURS]  accuracy on the training and test data")
+print(f"{'k':>4} {'Uniform train':>15} {'Uniform test':>14} {'Distance train':>16} {'Distance test':>15}")
 for k in SHOWN_K:
-    cells = [f"{train:.3f} / {test:.3f}" for train, test in (accuracy[w][k - 1] for w in WEIGHTS)]
-    print(f"{k:>4}   {cells[0]:^15} {cells[1]:^15}")
+    (u_train, u_test), (d_train, d_test) = (accuracy[w][k - 1] for w in WEIGHTS)
+    print(f"{k:>4} {u_train:>15.1%} {u_test:>14.1%} {d_train:>16.1%} {d_test:>15.1%}")
 
 # Test accuracy against k, with logistic regression as a reference line
 fig, ax = plt.subplots(figsize=(8, 5.5))
@@ -95,13 +95,13 @@ def evaluate(name, model):
     """Print one row of the comparison table and return the test predictions."""
     y_pred = model.fit(X_train, y_train).predict(X_test)
     cv_acc = cross_val_score(model, iris.data, iris.target, cv=cv).mean()
-    print(f"{name:<24} {accuracy_score(y_test, y_pred):>8.3f} "
-          f"{(y_test != y_pred).sum():>8} {cv_acc:>9.3f}")
+    print(f"{name:<22} {accuracy_score(y_test, y_pred):>13.1%} "
+          f"{(y_test != y_pred).sum():>14} {cv_acc:>12.1%}")
     return y_pred
 
 
 print("\n[2c  MODEL COMPARISON]")
-print(f"{'Model':<24} {'Test acc':>8} {'Errors':>8} {'CV acc':>9}")
+print(f"{'Model':<22} {'Test accuracy':>13} {'Wrong (of 45)':>14} {'CV accuracy':>12}")
 evaluate("Logistic regression", LogisticRegression(max_iter=1000))
 
 # One confusion matrix per k-NN setting: rows = weights, columns = k
