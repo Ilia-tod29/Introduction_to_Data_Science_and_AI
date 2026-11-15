@@ -26,6 +26,15 @@ iris = load_iris()
 X_train, X_test, y_train, y_test = train_test_split(
     iris.data, iris.target, test_size=0.3, stratify=iris.target, random_state=42)
 
+# A first look at the data: smallest - largest value of each measurement, per species
+print(f"[DATA]  {len(iris.data)} flowers, measurements in cm (smallest - largest per species)")
+print(f"{'':<12}{'flowers':>8}" + "".join(f"{name[:-5]:>16}" for name in iris.feature_names))
+for i, name in enumerate(iris.target_names):
+    flowers = iris.data[iris.target == i]
+    print(f"{name:<12}{len(flowers):>8}" + "".join(
+        f"{low:>10.1f} - {high:.1f}" for low, high in zip(flowers.min(axis=0), flowers.max(axis=0))))
+print()
+
 # ----------------------------------------------------------------------------
 # 2a. Logistic regression, evaluated with a confusion matrix
 # ----------------------------------------------------------------------------
